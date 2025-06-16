@@ -1,4 +1,4 @@
--- Auto Bond PRO MAX++ – Full tính năng nâng cấp vượt NatHub
+
 
 local p = game.Players.LocalPlayer
 local gui = Instance.new("ScreenGui", p:WaitForChild("PlayerGui"))
