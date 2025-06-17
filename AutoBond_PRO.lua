@@ -1,99 +1,127 @@
--- Dead Rails Mobile Hack (Arceus X v3+)
-local HttpService = game:GetService("HttpService")
-local RunService = game:GetService("RunService")
-local UIS = game:GetService("UserInputService")
+-- Dead Rails Ultimate Hack (Mobile & PC)
+-- Features: Auto Bond, Auto Farm, Auto Win, ESP, Teleport, GUI
+
 local Players = game:GetService("Players")
-local RepStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local HttpService = game:GetService("HttpService")
 
-local LocalPlayer = Players.LocalPlayer
+local localPlayer = Players.LocalPlayer
+local hrp = localPlayer.Character and localPlayer.Character:WaitForChild("HumanoidRootPart")
 
--- GUI custom simple
-local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
-ScreenGui.Name = "DRailsHackGui"
+-- GUI INIT --
+local ScreenGui = Instance.new("ScreenGui", localPlayer:WaitForChild("PlayerGui"))
+ScreenGui.Name = "DeadRailsUltimateGUI"
 local Frame = Instance.new("Frame", ScreenGui)
 Frame.Position = UDim2.new(0.02, 0, 0.1, 0)
-Frame.Size = UDim2.new(0, 180, 0, 200)
+Frame.Size = UDim2.new(0, 200, 0, 300)
 Frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 Frame.BorderSizePixel = 0
 
-local function createToggle(name, y)
+local function createToggle(name, y, callback)
     local btn = Instance.new("TextButton", Frame)
     btn.Position = UDim2.new(0, 10, 0, y)
-    btn.Size = UDim2.new(0, 160, 0, 30)
+    btn.Size = UDim2.new(0, 180, 0, 30)
+    btn.Text = name .. ": OFF"
     btn.BackgroundColor3 = Color3.fromRGB(60,60,60)
     btn.TextColor3 = Color3.new(1,1,1)
-    btn.TextSize = 18
-    btn.Text = name..": OFF"
-    btn.Active = true
+    btn.MouseButton1Click:Connect(function()
+        callback()
+    end)
     return btn
 end
 
-local btnBond = createToggle("Auto Bond", 10)
-local btnWin = createToggle("Auto Win", 50)
-local btnSpeed = createToggle("SpeedHack", 90)
-
-local speedVal = 16
-btnSpeed.Text = ("SpeedHack: %d"):format(speedVal)
-
--- States
+-- States --
 local autoBond = false
+local autoFarm = false
 local autoWin = false
+local espOn = false
+local teleportToEnd = false
 
--- Toggle events
-btnBond.MouseButton1Click:Connect(function()
-    autoBond = not autoBond
-    btnBond.Text = "Auto Bond: " .. (autoBond and "ON" or "OFF")
-    btnBond.BackgroundColor3 = autoBond and Color3.fromRGB(0,150,0) or Color3.fromRGB(60,60,60)
-end)
-btnWin.MouseButton1Click:Connect(function()
-    autoWin = not autoWin
-    btnWin.Text = "Auto Win: " .. (autoWin and "ON" or "OFF")
-    btnWin.BackgroundColor3 = autoWin and Color3.fromRGB(0,150,0) or Color3.fromRGB(60,60,60)
-end)
-btnSpeed.MouseButton1Click:Connect(function()
-    speedVal = speedVal >= 120 and 16 or speedVal + 16
-    btnSpeed.Text = ("SpeedHack: %d"):format(speedVal)
-end)
-
--- Core logic
-task.spawn(function()
-    while RunService.Heartbeat:Wait() do
-        -- Apply speedhack
-        local char = LocalPlayer.Character
-        if char then
-            local hum = char:FindFirstChild("Humanoid")
-            if hum then hum.WalkSpeed = speedVal; hum.JumpPower = speedVal * 0.5 end
-        end
-
-        -- Auto Bond
-        if autoBond and game.PlaceId == 70876832253163 then
-            local items = Workspace:FindFirstChild("RuntimeItems")
-            local fire = RepStorage:FindFirstChild("Packages")
-                        and RepStorage.Packages:FindFirstChild("ActivateObjectClient")
-            if items and fire then
-                for _, item in pairs(items:GetChildren()) do
-                    if item.Name == "Bond" and item:IsA("Model") and item.PrimaryPart then
-                        local part = item.PrimaryPart
-                        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                        if hrp then
-                            -- Di chuyển nhẹ nhàng từng bước để tránh phát hiện
-                            hrp.CFrame = part.CFrame * CFrame.new(0,0.1,0)
-                            fire:FireServer({object = item})
-                            task.wait(0.1)
-                        end
-                    end
-                end
-            end
-        end
-
-        -- Auto Win
-        if autoWin and game.PlaceId == 70876832253163 then
-            local winEvent = RepStorage:FindFirstChild("Packages")
-                            and RepStorage.Packages:FindFirstChild("CompleteRaceClient")
-            if winEvent then
-                winEvent:FireServer()
+-- AUTO BOND
+local function doAutoBond()
+    while autoBond and task.wait(0.2) do
+        for _,v in ipairs(Workspace:GetDescendants()) do
+            if v.Name == "RuntimeItem" and v:IsA("Model") and v:FindFirstChild("Activate") then
+                fireproximityprompt(v.Activate)
             end
         end
     end
+end
+
+-- AUTO FARM BOND
+local function doAutoFarm()
+    while autoFarm and task.wait(0.3) do
+        for _,v in ipairs(Workspace:GetDescendants()) do
+            if v.Name == "RuntimeItem" and v:IsA("Model") and v:FindFirstChild("Activate") then
+                hrp.CFrame = v.CFrame + Vector3.new(0,3,0)
+                task.wait(0.2)
+                fireproximityprompt(v.Activate)
+            end
+        end
+    end
+end
+
+-- AUTO WIN
+local function doAutoWin()
+    while autoWin and task.wait(1) do
+        ReplicatedStorage.RemoteEvent:FireServer({"CompleteRaceClient"})
+    end
+end
+
+-- TELEPORT TO END
+local function doTeleportToEnd()
+    for _,v in ipairs(Workspace:GetDescendants()) do
+        if v.Name == "EndPart" then
+            hrp.CFrame = v.CFrame + Vector3.new(0,5,0)
+            break
+        end
+    end
+end
+
+-- ESP
+local function toggleESP()
+    for _,v in ipairs(Workspace:GetDescendants()) do
+        if v.Name == "RuntimeItem" and not v:FindFirstChild("BillboardGui") then
+            local bb = Instance.new("BillboardGui", v)
+            bb.Size = UDim2.new(0,100,0,50)
+            bb.Adornee = v
+            bb.AlwaysOnTop = true
+            local lbl = Instance.new("TextLabel", bb)
+            lbl.Size = UDim2.new(1,0,1,0)
+            lbl.Text = "BOND"
+            lbl.BackgroundTransparency = 1
+            lbl.TextColor3 = Color3.new(1,1,0)
+            lbl.TextScaled = true
+        end
+    end
+end
+
+-- GUI BUTTONS
+createToggle("Auto Bond", 10, function()
+    autoBond = not autoBond
+    doAutoBond()
 end)
+
+createToggle("Auto Farm Bond", 50, function()
+    autoFarm = not autoFarm
+    doAutoFarm()
+end)
+
+createToggle("Auto Win", 90, function()
+    autoWin = not autoWin
+    doAutoWin()
+end)
+
+createToggle("Teleport to End", 130, function()
+    doTeleportToEnd()
+end)
+
+createToggle("ESP Bonds", 170, function()
+    espOn = not espOn
+    if espOn then toggleESP() end
+end)
+
+-- READY
+print("[+] Dead Rails Ultimate Loaded")
