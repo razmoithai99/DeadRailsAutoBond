@@ -1,65 +1,99 @@
--- Dead Rails All‑in‑One by ChatGPT
-local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/bloodball/UI-Librarys/main/Wally UI v3"))()
-local win = lib:CreateWindow("Dead Rails | Multi‑Hack")
+-- Dead Rails Mobile Hack (Arceus X v3+)
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local RepStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
+local LocalPlayer = Players.LocalPlayer
+
+-- GUI custom simple
+local ScreenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+ScreenGui.Name = "DRailsHackGui"
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Position = UDim2.new(0.02, 0, 0.1, 0)
+Frame.Size = UDim2.new(0, 180, 0, 200)
+Frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Frame.BorderSizePixel = 0
+
+local function createToggle(name, y)
+    local btn = Instance.new("TextButton", Frame)
+    btn.Position = UDim2.new(0, 10, 0, y)
+    btn.Size = UDim2.new(0, 160, 0, 30)
+    btn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.TextSize = 18
+    btn.Text = name..": OFF"
+    btn.Active = true
+    return btn
+end
+
+local btnBond = createToggle("Auto Bond", 10)
+local btnWin = createToggle("Auto Win", 50)
+local btnSpeed = createToggle("SpeedHack", 90)
+
+local speedVal = 16
+btnSpeed.Text = ("SpeedHack: %d"):format(speedVal)
+
+-- States
 local autoBond = false
 local autoWin = false
-local speedVal = 16  -- speed multiplier
 
-win:Toggle("Auto Bond", function(v) autoBond = v end)
-win:Toggle("Auto Win", function(v) autoWin = v end)
-win:Slider("Speedhack", {min = 16, max = 120, Default = 16}, function(v) speedVal = v end)
+-- Toggle events
+btnBond.MouseButton1Click:Connect(function()
+    autoBond = not autoBond
+    btnBond.Text = "Auto Bond: " .. (autoBond and "ON" or "OFF")
+    btnBond.BackgroundColor3 = autoBond and Color3.fromRGB(0,150,0) or Color3.fromRGB(60,60,60)
+end)
+btnWin.MouseButton1Click:Connect(function()
+    autoWin = not autoWin
+    btnWin.Text = "Auto Win: " .. (autoWin and "ON" or "OFF")
+    btnWin.BackgroundColor3 = autoWin and Color3.fromRGB(0,150,0) or Color3.fromRGB(60,60,60)
+end)
+btnSpeed.MouseButton1Click:Connect(function()
+    speedVal = speedVal >= 120 and 16 or speedVal + 16
+    btnSpeed.Text = ("SpeedHack: %d"):format(speedVal)
+end)
 
--- Keybinds
-win:Keybind("Toggle GUI (F)", Enum.KeyCode.F, function() win:ToggleWindow() end)
-
--- Core loops
+-- Core logic
 task.spawn(function()
-    while true do
-        task.wait(0.1)
-        local player = game.Players.LocalPlayer
-        if player.Character then
-            local hrp = player.Character:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                player.Character.Humanoid.WalkSpeed = speedVal
-                player.Character.Humanoid.JumpPower = speedVal * 0.5
-            end
+    while RunService.Heartbeat:Wait() do
+        -- Apply speedhack
+        local char = LocalPlayer.Character
+        if char then
+            local hum = char:FindFirstChild("Humanoid")
+            if hum then hum.WalkSpeed = speedVal; hum.JumpPower = speedVal * 0.5 end
         end
 
+        -- Auto Bond
         if autoBond and game.PlaceId == 70876832253163 then
-            local items = workspace:FindFirstChild("RuntimeItems")
-            local fire = game.ReplicatedStorage:FindFirstChild("Packages"):FindFirstChild("ActivateObjectClient")
+            local items = Workspace:FindFirstChild("RuntimeItems")
+            local fire = RepStorage:FindFirstChild("Packages")
+                        and RepStorage.Packages:FindFirstChild("ActivateObjectClient")
             if items and fire then
-                for _, b in pairs(items:GetChildren()) do
-                    if b.Name == "Bond" and b:IsA("Model") and b.PrimaryPart then
-                        local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                for _, item in pairs(items:GetChildren()) do
+                    if item.Name == "Bond" and item:IsA("Model") and item.PrimaryPart then
+                        local part = item.PrimaryPart
+                        local hrp = char and char:FindFirstChild("HumanoidRootPart")
                         if hrp then
-                            hrp.CFrame = b.PrimaryPart.CFrame
-                            fire:FireServer({object = b})
-                            task.wait(0.05)
+                            -- Di chuyển nhẹ nhàng từng bước để tránh phát hiện
+                            hrp.CFrame = part.CFrame * CFrame.new(0,0.1,0)
+                            fire:FireServer({object = item})
+                            task.wait(0.1)
                         end
                     end
                 end
             end
         end
 
+        -- Auto Win
         if autoWin and game.PlaceId == 70876832253163 then
-            local winEvent = game.ReplicatedStorage:FindFirstChild("Packages"):FindFirstChild("CompleteRaceClient")
+            local winEvent = RepStorage:FindFirstChild("Packages")
+                            and RepStorage.Packages:FindFirstChild("CompleteRaceClient")
             if winEvent then
                 winEvent:FireServer()
-                task.wait(1)
             end
         end
     end
 end)
-
--- Global toggle key (Shift+S)
-game:GetService("UserInputService").InputBegan:Connect(function(inp, gp)
-    if not gp and inp.KeyCode == Enum.KeyCode.S and game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.LeftShift) then
-        autoBond = false
-        autoWin = false
-        speedVal = 16
-        win:ToggleWindow(true)
-    end
-end)
-
