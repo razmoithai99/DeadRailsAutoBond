@@ -1,4 +1,4 @@
--- Dead Rail PRO Script | Fully Functional + NatHub-Style UI + Bond System + ESP + Utility Tools
+-- Dead Rail PRO Script | Fully Functional  + Bond System + ESP + Utility Tools
 -- Author: Kimizuka Kimiho
 
 -- Services
