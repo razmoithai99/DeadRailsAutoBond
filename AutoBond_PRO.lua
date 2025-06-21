@@ -1,132 +1,106 @@
--- Dead Rails Ultimate Mobile Edition
--- Features: Auto Bond, Auto Farm, Auto Win, Teleport, ESP (Optimized for Mobile)
+-- Dead Rails Mobile Ultimate Script
+-- AutoBond, AutoFarm, AutoWin, Teleport End & ESP
 
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local localPlayer = Players.LocalPlayer
-local hrp = localPlayer.Character and localPlayer.Character:WaitForChild("HumanoidRootPart")
+local lp = Players.LocalPlayer
+repeat task.wait() until lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
+local hrp = lp.Character.HumanoidRootPart
 
--- GUI INIT
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "DeadRailsMobileGUI"
-ScreenGui.Parent = game.CoreGui
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "DeadRailsMobileGui"
+gui.Parent = lp.PlayerGui
 
-local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 200, 0, 240)
-Frame.Position = UDim2.new(0.02, 0, 0.5, -120)
-Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Frame.BorderSizePixel = 0
-Frame.Parent = ScreenGui
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0,200,0,260); frame.Position = UDim2.new(0.02,0,0.3,0)
+frame.BackgroundColor3 = Color3.fromRGB(30,30,30); frame.BorderSizePixel = 0
 
-local UIListLayout = Instance.new("UIListLayout", Frame)
-UIListLayout.Padding = UDim.new(0, 6)
-UIListLayout.FillDirection = Enum.FillDirection.Vertical
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+local UIList = Instance.new("UIListLayout", frame); UIList.Padding = UDim.new(0,6)
 
-function createToggle(text, callback)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -10, 0, 35)
-    btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    btn.Font = Enum.Font.SourceSansBold
-    btn.TextScaled = true
-    btn.Parent = Frame
-    btn.MouseButton1Click:Connect(callback)
+-- Buttons
+local function createBtn(text,func)
+    local b = Instance.new("TextButton", frame)
+    b.Size = UDim2.new(1,-10,0,35)
+    b.Text = text; b.Font = Enum.Font.SourceSansBold; b.TextScaled=true
+    b.TextColor3=Color3.new(1,1,1); b.BackgroundColor3=Color3.fromRGB(50,50,50)
+    b.MouseButton1Click:Connect(func)
 end
 
--- Toggles
-local autoBond = false
-local autoFarm = false
-local autoWin = false
-local espOn = false
+-- States
+local autoBond, autoFarm, autoWin, espOn = false,false,false,false
 
--- Auto Bond
-function autoBondFunc()
-    while autoBond and task.wait(0.3) do
-        for _,v in ipairs(Workspace:GetDescendants()) do
-            if v.Name == "RuntimeItem" and v:IsA("Model") and v:FindFirstChild("Activate") then
+-- Functions
+local function autoBondFunc()
+    while autoBond and task.wait(0.25) do
+        for _,v in pairs(Workspace:GetDescendants()) do
+            if v:IsA("Model") and v:FindFirstChild("Activate") then
                 fireproximityprompt(v.Activate)
             end
         end
     end
 end
 
--- Auto Farm Bond
-function autoFarmFunc()
-    while autoFarm and task.wait(0.4) do
-        for _,v in ipairs(Workspace:GetDescendants()) do
-            if v.Name == "RuntimeItem" and v:IsA("Model") and v:FindFirstChild("Activate") then
-                hrp.CFrame = v.CFrame + Vector3.new(0, 3, 0)
-                task.wait(0.2)
+local function autoFarmFunc()
+    while autoFarm and task.wait(0.35) do
+        for _,v in pairs(Workspace:GetDescendants()) do
+            if v:IsA("Model") and v:FindFirstChild("Activate") then
+                hrp.CFrame = v:GetModelCFrame() + Vector3.new(0,3,0)
+                task.wait(0.1)
                 fireproximityprompt(v.Activate)
             end
         end
     end
 end
 
--- Auto Win
-function autoWinFunc()
+local function autoWinFunc()
     while autoWin and task.wait(1.2) do
         ReplicatedStorage.RemoteEvent:FireServer({"CompleteRaceClient"})
     end
 end
 
--- Teleport to End
-function teleportEnd()
-    for _,v in ipairs(Workspace:GetDescendants()) do
-        if v.Name == "EndPart" then
-            hrp.CFrame = v.CFrame + Vector3.new(0, 4, 0)
+local function teleportToEnd()
+    for _,v in pairs(Workspace:GetDescendants()) do
+        if v.Name=="EndPart" then
+            hrp.CFrame = v.CFrame + Vector3.new(0,5,0)
             break
         end
     end
 end
 
--- ESP for Bonds
-function toggleESP()
-    for _,v in ipairs(Workspace:GetDescendants()) do
-        if v.Name == "RuntimeItem" and not v:FindFirstChild("BondESP") then
+local function toggleESP()
+    for _,v in pairs(Workspace:GetDescendants()) do
+        if v:IsA("Model") and v:FindFirstChild("Activate") and not v:FindFirstChild("BondESP") then
             local bb = Instance.new("BillboardGui", v)
             bb.Name = "BondESP"
-            bb.Size = UDim2.new(0, 100, 0, 40)
-            bb.AlwaysOnTop = true
-            bb.Adornee = v
+            bb.Size = UDim2.new(0,100,0,40); bb.AlwaysOnTop=true; bb.Adornee=v
             local lbl = Instance.new("TextLabel", bb)
-            lbl.Size = UDim2.new(1, 0, 1, 0)
-            lbl.BackgroundTransparency = 1
-            lbl.Text = "BOND"
-            lbl.TextColor3 = Color3.fromRGB(255, 255, 0)
-            lbl.TextScaled = true
+            lbl.Size = UDim2.new(1,0,1,0)
+            lbl.Text="BOND"; lbl.TextScaled=true; lbl.BackgroundTransparency=1
+            lbl.TextColor3=Color3.fromRGB(255,255,0)
         end
     end
 end
 
--- UI Buttons
-createToggle("Auto Bond", function()
+-- GUI Buttons
+createBtn("Auto Bond", function()
     autoBond = not autoBond
-    if autoBond then autoBondFunc() end
+    if autoBond then task.spawn(autoBondFunc) end
 end)
-
-createToggle("Auto Farm Bond", function()
+createBtn("Auto Farm", function()
     autoFarm = not autoFarm
-    if autoFarm then autoFarmFunc() end
+    if autoFarm then task.spawn(autoFarmFunc) end
 end)
-
-createToggle("Auto Win", function()
+createBtn("Auto Win", function()
     autoWin = not autoWin
-    if autoWin then autoWinFunc() end
+    if autoWin then task.spawn(autoWinFunc) end
 end)
-
-createToggle("Teleport to End", function()
-    teleportEnd()
-end)
-
-createToggle("ESP Bond", function()
+createBtn("Teleport to End", teleportToEnd)
+createBtn("ESP Bond", function()
     espOn = not espOn
     if espOn then toggleESP() end
 end)
 
-print("[+] Dead Rails Mobile Script Loaded")
+print("[✅] Dead Rails Mobile Ultimate Loaded")
