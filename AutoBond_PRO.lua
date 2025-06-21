@@ -1,153 +1,139 @@
---[[
-DeadRails NatHub-Enhanced Script
-Features:
-• Ultimate Auto Bond
-• Auto Farm (movement + pickup)
-• Auto Win
-• Teleport to End
-• ESP
-• WalkSpeed / JumpPower sliders
-• NoClip (PC-only)
-]]
+--// ✅ FULL DEAD RAILS SCRIPT v1.0 by Kimizuka Kimiho (Arceus X optimized)
 
-local P,W,RS,PS = game:GetService("Players"),game:GetService("Workspace"),
-game:GetService("ReplicatedStorage"),game:GetService("Players").LocalPlayer
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+local Camera = workspace.CurrentCamera
 
-repeat task.wait() until PS.Character and PS.Character:FindFirstChild("HumanoidRootPart")
-local hrp = PS.Character.HumanoidRootPart
-local hb = PS.Character:FindFirstChildOfClass("Humanoid")
+--// ✅ UI LIBRARY (Lightweight for Mobile)
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "DeadRailsHub"
 
--- GUI Init
-local gui = Instance.new("ScreenGui", PS.PlayerGui); gui.Name="NatHubEnhanced"
-local frame = Instance.new("Frame",gui); frame.Size=UDim2.new(0,240,0,380); frame.Position=UDim2.new(0.02,0,0.1,0)
-frame.BackgroundTransparency=0.2;frame.BackgroundColor3=Color3.fromRGB(15,15,15)
-frame.BorderSizePixel=0;frame.Active=true;frame.Draggable=true
-local layout = Instance.new("UIListLayout", frame); layout.Padding=UDim.new(0,6)
-local title=Instance.new("TextLabel",frame)
-title.Size=UDim2.new(1,0,0,30); title.Text="NatHub Enhanced";title.TextColor3=Color3.new(1,1,1)
-title.Font=Enum.Font.SourceSansBold;title.TextSize=18;title.BackgroundTransparency=1
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+MainFrame.Size = UDim2.new(0, 280, 0, 300)
+MainFrame.Position = UDim2.new(0.05, 0, 0.2, 0)
+MainFrame.BorderSizePixel = 0
+MainFrame.Visible = true
 
--- States
-local st = {bond=false,farm=false,win=false,esp=false,noclip=false}
-local sliders = {ws=16,jp=50}
+local UIStroke = Instance.new("UIStroke", MainFrame)
+UIStroke.Thickness = 1
+UIStroke.Color = Color3.fromRGB(90,90,90)
 
--- Functions
-function ultimateBond()
-  while st.bond do
-    task.wait(0.15)
-    for _,v in ipairs(W:GetDescendants()) do
-      if v:IsA("Model") and v:FindFirstChild("Activate") then
-        pcall(fireproximityprompt, v.Activate)
-      end
-    end
-  end
-end
+local UICorner = Instance.new("UICorner", MainFrame)
+UICorner.CornerRadius = UDim.new(0, 8)
 
-function autoFarm()
-  while st.farm do
-    task.wait(0.3)
-    for _,v in ipairs(W:GetDescendants()) do
-      if v:IsA("Model") and v:FindFirstChild("Activate") then
-        pcall(function()
-          hrp.CFrame = v:GetModelCFrame() + Vector3.new(0,2,0)
-          task.wait(0.07)
-          fireproximityprompt(v.Activate)
-        end)
-      end
-    end
-  end
-end
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Text = "Dead Rails Hub"
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.TextColor3 = Color3.fromRGB(255,255,255)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamSemibold
+Title.TextSize = 20
 
-function autoWin()
-  while st.win do
-    task.wait(1)
-    pcall(function() RS:WaitForChild("RemoteEvent"):FireServer({"CompleteRaceClient"}) end)
-  end
-end
+--// 🔁 Toggle System
+local function createToggle(name, default, callback)
+    local Toggle = Instance.new("TextButton", MainFrame)
+    Toggle.Text = name .. " [" .. (default and "ON" or "OFF") .. "]"
+    Toggle.Size = UDim2.new(1, -20, 0, 30)
+    Toggle.Position = UDim2.new(0, 10, 0, #MainFrame:GetChildren() * 35)
+    Toggle.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    Toggle.TextColor3 = Color3.fromRGB(255,255,255)
+    Toggle.Font = Enum.Font.Gotham
+    Toggle.TextSize = 16
+    Toggle.BorderSizePixel = 0
+    Toggle.AutoButtonColor = false
+    local toggled = default
 
-function teleportEnd()
-  for _,v in ipairs(W:GetDescendants()) do
-    if v.Name=="EndPart" then
-      hrp.CFrame=v.CFrame + Vector3.new(0,5,0)
-      break
-    end
-  end
-end
-
-function updateESP()
-  for _,v in ipairs(W:GetDescendants()) do
-    if v:IsA("Model") and v:FindFirstChild("Activate") and not v:FindFirstChild("ESP") then
-      local bb=Instance.new("BillboardGui",v); bb.Name="ESP"
-      bb.Size=UDim2.new(0,80,0,30); bb.AlwaysOnTop=true; bb.Adornee=v
-      local lbl=Instance.new("TextLabel",bb)
-      lbl.Size=UDim2.new(1,0,1,0); lbl.BackgroundTransparency=1; lbl.Text="BOND"
-      lbl.TextColor3=Color3.fromRGB(255,200,0); lbl.TextScaled=true
-    end
-  end
-end
-
--- Toggle Creator
-local function addToggle(txt,key,func)
-  local fr=Instance.new("Frame",frame); fr.Size=UDim2.new(1,-10,0,40); fr.BackgroundTransparency=0.3
-  local lbl=Instance.new("TextLabel",fr)
-  lbl.Text=txt;lbl.Size=UDim2.new(0.6,0,1,0);lbl.BackgroundTransparency=1;lbl.TextColor3=Color3.new(1,1,1)
-  local tog=Instance.new("TextButton",fr)
-  tog.Size=UDim2.new(0.4,-5,1,0);tog.Position=UDim2.new(0.6,0,0,0)
-  tog.BackgroundColor3=Color3.fromRGB(60,60,60);tog.Font=Enum.Font.SourceSansBold;tog.Text="OFF"
-  tog.TextColor3=Color3.new(1,1,1);tog.TextScaled=true
-  tog.MouseButton1Click:Connect(function()
-    st[key]=not st[key]
-    tog.Text=st[key] and "ON" or "OFF"
-    tog.BackgroundColor3=st[key] and Color3.fromRGB(0,150,0) or Color3.fromRGB(60,60,60)
-    if func and st[key] then task.spawn(func) end
-  end)
-end
-
--- Slider Creator
-local function addSlider(txt,key,min,max)
-  local fr=Instance.new("Frame",frame); fr.Size=UDim2.new(1,-10,0,60);fr.BackgroundTransparency=0.3
-  local lbl=Instance.new("TextLabel",fr);lbl.Text=txt;lbl.Size=UDim2.new(1,0,0,20)
-  lbl.BackgroundTransparency=1;lbl.TextColor3=Color3.new(1,1,1);lbl.Font=Enum.Font.SourceSans
-  -- Value display
-  local val=Instance.new("TextLabel",fr);val.Position=UDim2.new(0,0,0,20)
-  val.Size=UDim2.new(1,0,0,20);val.BackgroundTransparency=1;val.TextColor3=Color3.new(1,1,1)
-  val.Text = tostring(sliders[key])
-  -- Slider bar
-  local slider = Instance.new("TextButton",fr)
-  slider.Position=UDim2.new(0,0,0,40);slider.Size=UDim2.new(1,0,0,10)
-  slider.BackgroundColor3=Color3.fromRGB(70,70,70)
-  local fill=Instance.new("Frame",slider)
-  fill.Size=UDim2.new((sliders[key]-min)/(max-min),0,1,0)
-  fill.BackgroundColor3=Color3.fromRGB(100,200,100)
-  slider.MouseButton1Down:Connect(function(x)
-    local conn
-    conn = slider.MouseMovement:Connect(function(mx)
-      local pct = math.clamp((mx - slider.AbsolutePosition.X)/slider.AbsoluteSize.X, 0,1)
-      sliders[key] = math.floor(min + (max-min)*pct)
-      fill.Size=UDim2.new(pct,0,1,0)
-      val.Text=tostring(sliders[key])
-      if key=="ws" then hb.WalkSpeed=sliders.ws end
-      if key=="jp" then hb.JumpPower=sliders.jp end
+    Toggle.MouseButton1Click:Connect(function()
+        toggled = not toggled
+        Toggle.Text = name .. " [" .. (toggled and "ON" or "OFF") .. "]"
+        callback(toggled)
     end)
-    local r; r = slider.MouseButton1Up:Connect(function()
-      conn:Disconnect(); r:Disconnect()
-    end)
-  end)
 end
 
--- Add toggles and sliders
-addToggle("Ultimate Auto Bond","bond",ultimateBond)
-addToggle("Auto Farm","farm",autoFarm)
-addToggle("Auto Win","win",autoWin)
-addToggle("ESP Bonds","esp",updateESP)
-addToggle("NoClip (PC)","noclip",function()
-  while st.noclip do
-    PS.Character.HumanoidRootPart.CanCollide=false
-    task.wait()
-  end
+--// ✅ AUTO BOND + AUTO FARM
+local function findBond()
+    local target = nil
+    local shortest = math.huge
+    for _, item in pairs(workspace:GetDescendants()) do
+        if item:IsA("Model") and item:FindFirstChild("Activate") and item.PrimaryPart and item.Name:lower():find("bond") then
+            local dist = (HumanoidRootPart.Position - item.PrimaryPart.Position).Magnitude
+            if dist < shortest then
+                target = item
+                shortest = dist
+            end
+        end
+    end
+    return target
+end
+
+local autoFarm = false
+createToggle("Auto Bond+Farm", false, function(state)
+    autoFarm = state
+    task.spawn(function()
+        while autoFarm do
+            local bond = findBond()
+            if bond then
+                HumanoidRootPart.CFrame = bond.PrimaryPart.CFrame + Vector3.new(0, 3, 0)
+                local prompt = bond:FindFirstChildWhichIsA("ProximityPrompt") or bond:FindFirstChild("Activate")
+                if prompt then fireproximityprompt(prompt) end
+                task.wait(1.25)
+            else
+                task.wait(0.5)
+            end
+        end
+    end)
 end)
-addSlider("WalkSpeed", "ws", 16, 200)
-addSlider("JumpPower", "jp", 50, 200)
-addToggle("Teleport to End","tele",teleportEnd)
 
-print("[✅] NatHub Enhanced loaded")
+--// ✅ AUTO WIN
+local autoWin = false
+createToggle("Auto Win", false, function(state)
+    autoWin = state
+    task.spawn(function()
+        while autoWin do
+            local winRemote = game:GetService("ReplicatedStorage"):FindFirstChild("Win")
+            if winRemote then winRemote:FireServer() end
+            task.wait(2)
+        end
+    end)
+end)
+
+--// ✅ ESP (basic)
+local ESP_Enabled = false
+createToggle("ESP Items", false, function(state)
+    ESP_Enabled = state
+end)
+
+RunService.RenderStepped:Connect(function()
+    if ESP_Enabled then
+        for _, obj in pairs(workspace:GetDescendants()) do
+            if obj:IsA("Model") and obj:FindFirstChild("Activate") and obj.PrimaryPart and not obj:FindFirstChild("ESP") then
+                if obj.Name:lower():find("bond") then
+                    local tag = Instance.new("BillboardGui", obj)
+                    tag.Name = "ESP"
+                    tag.Size = UDim2.new(0, 100, 0, 20)
+                    tag.Adornee = obj.PrimaryPart
+                    tag.AlwaysOnTop = true
+                    local txt = Instance.new("TextLabel", tag)
+                    txt.Text = "[BOND]"
+                    txt.TextColor3 = Color3.fromRGB(255, 215, 0)
+                    txt.BackgroundTransparency = 1
+                    txt.Size = UDim2.new(1, 0, 1, 0)
+                    txt.Font = Enum.Font.GothamBold
+                    txt.TextScaled = true
+                end
+            end
+        end
+    else
+        for _, v in pairs(workspace:GetDescendants()) do
+            if v:IsA("BillboardGui") and v.Name == "ESP" then
+                v:Destroy()
+            end
+        end
+    end
+end)"
+}
