@@ -1,4 +1,4 @@
--- Dead Rail Pro Script with Anti-Detection, ESP, Auto Bond, Aimbot, FullBright, Noclip, GUI + Bond Counter
+-- Dead Rail Pro Script 
 
 -- Services
 local Players = game:GetService("Players")
@@ -24,8 +24,6 @@ local autoSell = false
 local rejoinFlag = false
 local modDetected = false
 local currentTarget = nil
-local camLoop = nil
-local deathConn = nil
 local noclip = false
 local fullBrightEnabled = false
 local autoDrive = false
@@ -60,59 +58,10 @@ local function detectMods()
     return false
 end
 
--- GUI Setup
-local function createGUI()
-    local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-    gui.Name = "DeadRailProUI"
-    gui.ResetOnSpawn = false
-
-    local frame = Instance.new("Frame", gui)
-    frame.Size = UDim2.new(0, 300, 0, 400)
-    frame.Position = UDim2.new(0.5, -150, 0.5, -200)
-    frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    frame.BackgroundTransparency = 0.2
-    frame.Active = true
-    frame.Draggable = true
-
-    local function createToggle(name, posY, callback)
-        local btn = Instance.new("TextButton", frame)
-        btn.Size = UDim2.new(1, -20, 0, 30)
-        btn.Position = UDim2.new(0, 10, 0, posY)
-        btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-        btn.TextColor3 = Color3.new(1, 1, 1)
-        btn.Font = Enum.Font.GothamBold
-        btn.TextSize = 14
-        local state = false
-        btn.Text = name .. " [OFF]"
-        btn.MouseButton1Click:Connect(function()
-            state = not state
-            btn.Text = name .. (state and " [ON]" or " [OFF]")
-            callback(state)
-        end)
-    end
-
-    createToggle("ESP", 10, function(v) ESPEnabled = v end)
-    createToggle("Auto Teleport Bond", 50, function(v) AutoTeleportBond = v end)
-    createToggle("Auto Loot", 90, function(v) autoLoot = v end)
-    createToggle("Auto Sell", 130, function(v) autoSell = v end)
-    createToggle("Auto Rejoin", 170, function(v) rejoinFlag = v end)
-    createToggle("FullBright", 210, function(v)
-        fullBrightEnabled = v
-        for _, part in pairs(Workspace:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.Material = v and Enum.Material.SmoothPlastic or Enum.Material.Plastic
-                part.Color = v and Color3.fromRGB(255,255,255) or part.Color
-            end
-        end
-    end)
-    createToggle("Noclip", 250, function(v) noclip = v end)
-    createToggle("Auto Drive", 290, function(v) autoDrive = v end)
-end
-
 -- ESP Core
 local function CreateESP()
     local box = Drawing.new("Square")
-    box.Color = Color3.fromRGB(255, 0, 0)
+    box.Color = Color3.fromRGB(0, 255, 0)
     box.Thickness = 2
     box.Filled = false
     box.Visible = false
@@ -158,47 +107,47 @@ local function TrackObjects()
     end
 end
 
--- Bond Counter UI
-local ScreenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-ScreenGui.Name = "BondCounter"
+-- UI
+local ui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+ui.Name = "DeadRailProUI"
 
-local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 200, 0, 70)
-Frame.Position = UDim2.new(0, 10, 0, 10)
-Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Frame.BorderSizePixel = 0
-Frame.Draggable = true
-Frame.Active = true
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 250, 0, 100)
+mainFrame.Position = UDim2.new(0, 20, 0, 20)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = ui
+mainFrame.Active = true
+mainFrame.Draggable = true
 
-local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(1, 0, 0.4, 0)
-Title.BackgroundTransparency = 1
-Title.Text = "Bond Counter"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.Font = Enum.Font.SourceSansBold
-Title.TextScaled = true
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0.3, 0)
+title.BackgroundTransparency = 1
+title.Text = "Dead Rail Bond Counter"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Parent = mainFrame
 
-local CountLabel = Instance.new("TextLabel", Frame)
-CountLabel.Position = UDim2.new(0, 0, 0.4, 0)
-CountLabel.Size = UDim2.new(1, 0, 0.6, 0)
-CountLabel.BackgroundTransparency = 1
-CountLabel.TextColor3 = Color3.fromRGB(200, 255, 200)
-CountLabel.Font = Enum.Font.SourceSans
-CountLabel.TextScaled = true
-CountLabel.Text = "Đang quét..."
+local bondLabel = Instance.new("TextLabel")
+bondLabel.Position = UDim2.new(0, 0, 0.3, 0)
+bondLabel.Size = UDim2.new(1, 0, 0.7, 0)
+bondLabel.BackgroundTransparency = 1
+bondLabel.Text = "Đang quét..."
+bondLabel.Font = Enum.Font.Gotham
+title.TextWrapped = true
+bondLabel.TextSize = 14
+bondLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+bondLabel.Parent = mainFrame
 
-local total = 0
-local collected = 0
-local found = {}
-
+-- Counter logic
+local total, collected, found = 0, 0, {}
 local function updateCounter()
-    CountLabel.Text = "Đã nhặt: " .. collected .. "/" .. total
+    bondLabel.Text = "Đã nhặt: " .. collected .. "/" .. total
 end
 
--- Scan and Collect Bonds
 local function scanAndCollect()
-    total = 0
-    collected = 0
+    total, collected = 0, 0
     table.clear(found)
     for _, bond in ipairs(Workspace:GetDescendants()) do
         if bond:IsA("Part") and bond.Name:lower():find("bond") and bond:FindFirstChild("TouchInterest") then
@@ -218,10 +167,7 @@ local function scanAndCollect()
     end
 end
 
--- Start Collection
-task.spawn(scanAndCollect)
-
--- Auto Teleport to Nearest Bond
+-- Bond Teleport
 local function GetNearestBond()
     local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     local nearest, shortest = nil, math.huge
@@ -238,4 +184,32 @@ local function GetNearestBond()
         end
     end
     return nearest
+end
+
+-- Start services
+TrackObjects()
+RunService.RenderStepped:Connect(UpdateESP)
+task.spawn(scanAndCollect)
+
+-- Toggle bridges
+_G.ToggleESP = function(val)
+    ESPEnabled = val
+end
+
+_G.ToggleAutoTeleportBond = function(val)
+    AutoTeleportBond = val
+end
+
+_G.ToggleAutoLoot = function(val)
+    autoLoot = val
+end
+
+_G.ToggleFullBright = function(val)
+    fullBrightEnabled = val
+    for _, part in pairs(Workspace:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.Material = val and Enum.Material.SmoothPlastic or Enum.Material.Plastic
+            part.Color = val and Color3.fromRGB(255,255,255) or part.Color
+        end
+    end
 end
