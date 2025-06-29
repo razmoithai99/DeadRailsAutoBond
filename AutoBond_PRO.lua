@@ -1,9 +1,4 @@
-from zipfile import ZipFile
-from pathlib import Path
-
-# Define the Lua script content as a file
-script_content = """
--- Dead Rail PRO Script | Fully Functional + NatHub-Style UI + Bond System + ESP + Utility Tools
+Dead Rail PRO Script | Fully Functional + NatHub-Style UI + Bond System + ESP + Utility Tools
 -- Author: Kimizuka Kimiho
 
 -- Services
@@ -155,7 +150,7 @@ icon.Parent = gui
 icon.Size = UDim2.new(0, 30, 0, 30)
 icon.Position = UDim2.new(0, 10, 0, 10)
 icon.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-icon.Text = "≡"
+icon.Text = "鈮�"
 icon.TextColor3 = Color3.new(1,1,1)
 icon.Visible = true
 icon.ZIndex = 10
@@ -164,16 +159,4 @@ icon.MouseButton1Click:Connect(function()
     uiFrame.Visible = not uiFrame.Visible
 end)
 
-print("✅ Dead Rail PRO UI Loaded - NatHub Style")
-"""
-
-# Write the file to a temporary location and zip it
-lua_path = Path("/mnt/data/DeadRail_Pro_Script.lua")
-lua_path.write_text(script_content)
-
-zip_path = Path("/mnt/data/DeadRail_Pro_Script.zip")
-with ZipFile(zip_path, "w") as zipf:
-    zipf.write(lua_path, arcname="DeadRail_Pro_Script.lua")
-
-zip_path.name
-
+print("鉁� Dead Rail PRO UI Loaded - NatHub Style")
