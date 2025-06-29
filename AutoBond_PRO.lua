@@ -1,57 +1,127 @@
-Dead Rail PRO Script | Fully Functional + NatHub-Style UI + Bond System + ESP + Utility Tools
+
+-- Dead Rail PRO Script | Fully Functional + NatHub-Style UI + Bond System + ESP + Utility Tools
 -- Author: Kimizuka Kimiho
 
--- Services
+-- SERVICES
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local StarterGui = game:GetService("StarterGui")
+local Lighting = game:GetService("Lighting")
 
--- Variables
 local player = Players.LocalPlayer
 local camera = Workspace.CurrentCamera
-local hrp = player.Character and player.Character:WaitForChild("HumanoidRootPart") or player.CharacterAdded:Wait():WaitForChild("HumanoidRootPart")
 
--- States
+local function waitForHRP()
+    if player.Character then
+        return player.Character:WaitForChild("HumanoidRootPart", 3)
+    end
+    player.CharacterAdded:Wait()
+    return player.Character:WaitForChild("HumanoidRootPart", 3)
+end
+
+local hrp = waitForHRP()
+
 local state = {
     FullBright = false,
     ESP = false,
-    AutoWin = false,
+    AutoBond = false,
     Noclip = false,
-    AutoDrive = false,
-    AutoBond = false
+    SpeedHack = false
 }
 
--- UI Setup
-local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+-- UI SETUP
+local gui = Instance.new("ScreenGui")
+gui.Name = "DeadRailProUI"
 gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local iconButton = Instance.new("ImageButton")
+iconButton.Name = "MinimizeIcon"
+iconButton.Image = "rbxassetid://17786626191"
+iconButton.Size = UDim2.new(0, 40, 0, 40)
+iconButton.Position = UDim2.new(0, 20, 0, 20)
+iconButton.BackgroundTransparency = 1
+iconButton.Visible = false
+iconButton.Parent = gui
+
 local uiFrame = Instance.new("Frame")
-uiFrame.Parent = gui
-uiFrame.Size = UDim2.new(0, 300, 0, 180)
+uiFrame.Name = "MainUI"
+uiFrame.Size = UDim2.new(0, 320, 0, 300)
 uiFrame.Position = UDim2.new(0.02, 0, 0.1, 0)
-uiFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-uiFrame.BackgroundTransparency = 0.2
+uiFrame.BackgroundColor3 = Color3.fromRGB(0, 255, 174)
+uiFrame.BackgroundTransparency = 0.1
 uiFrame.BorderSizePixel = 0
 uiFrame.Active = true
 uiFrame.Draggable = true
 uiFrame.ClipsDescendants = true
-uiFrame.AnchorPoint = Vector2.new(0, 0)
-uiFrame.Name = "MainMenu"
-uiFrame.Visible = true
-uiFrame.ZIndex = 5
-uiFrame:TweenSizeAndPosition(UDim2.new(0, 300, 0, 180), UDim2.new(0.02, 0, 0.1, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Sine, 0.5, true)
+uiFrame.Parent = gui
 
-local title = Instance.new("TextLabel", uiFrame)
-title.Size = UDim2.new(1, 0, 0.2, 0)
-title.Text = "Dead Rail | Pro UI"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
+local uiCorner = Instance.new("UICorner", uiFrame)
+uiCorner.CornerRadius = UDim.new(0, 12)
+
+local title = Instance.new("TextLabel")
+title.Text = "Dead Rail PRO UI"
+title.Size = UDim2.new(1, 0, 0, 35)
 title.Font = Enum.Font.GothamBold
+title.TextColor3 = Color3.new(1, 1, 1)
 title.BackgroundTransparency = 1
 title.TextScaled = true
+title.Parent = uiFrame
 
--- ESP Setup
+local function createToggle(text, order, bind)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.9, 0, 0, 30)
+    btn.Position = UDim2.new(0.05, 0, 0, 40 + order * 40)
+    btn.Text = text .. ": TẮT"
+    btn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.Gotham
+    btn.TextScaled = true
+    btn.Parent = uiFrame
+
+    local round = Instance.new("UICorner", btn)
+    round.CornerRadius = UDim.new(0, 8)
+
+    btn.MouseButton1Click:Connect(function()
+        state[bind] = not state[bind]
+        btn.Text = text .. ": " .. (state[bind] and "BẬT" or "TẮT")
+    end)
+end
+
+createToggle("ESP", 0, "ESP")
+createToggle("FullBright", 1, "FullBright")
+createToggle("Auto Bond", 2, "AutoBond")
+createToggle("Noclip", 3, "Noclip")
+createToggle("Speed Hack", 4, "SpeedHack")
+
+local minimize = Instance.new("TextButton")
+minimize.Size = UDim2.new(0, 30, 0, 30)
+minimize.Position = UDim2.new(1, -35, 0, 5)
+minimize.Text = "-"
+minimize.Font = Enum.Font.GothamBold
+minimize.TextScaled = true
+minimize.TextColor3 = Color3.new(1, 1, 1)
+minimize.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+minimize.Parent = uiFrame
+
+local closeCorner = Instance.new("UICorner", minimize)
+closeCorner.CornerRadius = UDim.new(0, 8)
+
+minimize.MouseButton1Click:Connect(function()
+    uiFrame.Visible = false
+    iconButton.Visible = true
+end)
+
+iconButton.MouseButton1Click:Connect(function()
+    uiFrame.Visible = true
+    iconButton.Visible = false
+end)
+
+-- ESP SYSTEM
 local espBoxes = {}
+
 local function createESPBox()
     local box = Drawing.new("Square")
     box.Visible = false
@@ -78,85 +148,50 @@ local function updateESP()
             else
                 box.Visible = false
             end
-        else
-            box.Visible = false
         end
     end
 end
 
--- Auto Bond Logic
-local bondList = {}
-local collected = 0
-local total = 0
-
+-- BOND COLLECTION
 local function scanBonds()
-    table.clear(bondList)
-    total = 0
-    collected = 0
-    for _, part in ipairs(Workspace:GetDescendants()) do
-        if part:IsA("Part") and part.Name:lower():find("bond") and part:FindFirstChild("TouchInterest") then
-            table.insert(bondList, part)
-            if not espBoxes[part] then
-                espBoxes[part] = createESPBox()
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and obj.Name:lower():find("bond") and obj:FindFirstChild("TouchInterest") then
+            if not espBoxes[obj] then
+                espBoxes[obj] = createESPBox()
             end
-            total += 1
         end
     end
 end
 
 local function collectBonds()
-    while state.AutoBond do
-        for _, bond in ipairs(bondList) do
-            if bond and bond:IsDescendantOf(Workspace) then
-                local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    hrp.CFrame = bond.CFrame + Vector3.new(0, 3, 0)
-                    wait(0.25)
-                    collected += 1
-                end
-            end
+    scanBonds()
+    for obj in pairs(espBoxes) do
+        if hrp and obj and obj:IsDescendantOf(Workspace) then
+            hrp.CFrame = obj.CFrame + Vector3.new(0, 3, 0)
+            task.wait(0.25)
         end
-        wait(2)
-        scanBonds()
     end
 end
 
--- Runtime
-RunService.RenderStepped:Connect(updateESP)
-RunService.Stepped:Connect(function()
+-- FULLBRIGHT
+local function toggleFullBright()
     if state.FullBright then
-        for _, p in pairs(Workspace:GetDescendants()) do
+        Lighting.Brightness = 3
+        Lighting.GlobalShadows = false
+        for _, p in ipairs(Workspace:GetDescendants()) do
             if p:IsA("BasePart") then
                 p.Material = Enum.Material.SmoothPlastic
                 p.Color = Color3.new(1, 1, 1)
             end
         end
     end
+end
+
+-- RUNTIME
+RunService.RenderStepped:Connect(function()
+    if state.ESP then updateESP() end
+    if state.FullBright then toggleFullBright() end
+    if state.AutoBond then collectBonds() end
 end)
 
-spawn(function()
-    while true do
-        if state.AutoBond then
-            scanBonds()
-            collectBonds()
-        end
-        wait(1)
-    end
-end)
-
--- Minimize Icon Placeholder
-local icon = Instance.new("TextButton")
-icon.Parent = gui
-icon.Size = UDim2.new(0, 30, 0, 30)
-icon.Position = UDim2.new(0, 10, 0, 10)
-icon.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-icon.Text = "鈮�"
-icon.TextColor3 = Color3.new(1,1,1)
-icon.Visible = true
-icon.ZIndex = 10
-
-icon.MouseButton1Click:Connect(function()
-    uiFrame.Visible = not uiFrame.Visible
-end)
-
-print("鉁� Dead Rail PRO UI Loaded - NatHub Style")
+print("✅ Dead Rail PRO UI Loaded")
